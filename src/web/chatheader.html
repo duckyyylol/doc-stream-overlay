@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Denk+One&display=swap');
+
+      :root {
+        --var-accent: #87bb6d;
+      }
+      body {
+        font-family: 'Denk One';
+        /* TODO: REMOVE */
+        background-color: #000;
+        color: white;
+        /* TODO: REMOVE */
+      }
+
+      .chatter-count,
+      .follower-count {
+        color: var(--var-accent);
+      }
+
+      .list {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+      }
+
+      .followers,
+      .chatters {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+        font-size: 0.8em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="list">
+      <div class="chatters">
+        <h1 class="chatter-count"></h1>
+        <h1 class="label-chatters">Overlay is</h1>
+      </div>
+      <h2 class="bullet"></h2>
+      <div class="followers">
+        <h1 class="follower-count"></h1>
+        <h1 class="label-followers">starting...</h1>
+      </div>
+    </div>
+
+    <script>
+      const chatterCount = document.querySelector('.chatter-count');
+      const followerCount = document.querySelector('.follower-count');
+      const chatterLabel = document.querySelector('.label-chatters');
+      const followerLabel = document.querySelector('.label-followers');
+      function createPacket(command, data) {
+        return JSON.stringify({ command, data, id: 0 });
+      }
+
+      const ws = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+      ws.onmessage = ev => {
+        const packet = JSON.parse(ev.data);
+        console.log(packet);
+
+        switch (packet.command) {
+          case 'hello':
+            ws.send(
+              createPacket('hello', {
+                intents: ['ROSTER'],
+              })
+            );
+            break;
+          case 'chatData': {
+            const { chatters, followers } = packet.data;
+            chatterCount.innerText = chatters.toLocaleString();
+            chatterLabel.innerText = `Chatter${chatters === 1 ? '' : 's'}`;
+            followerCount.innerText = `${followers.toLocaleString()}${packet.data.followerGoal ? `/${packet.data.followerGoal}` : ''}`;
+            followerLabel.innerText = `Follower${followers === 1 ? '' : 's'}`;
+            document.querySelector('.bullet').innerHTML = '&bull;';
+
+            break;
+          }
+
+          default:
+            break;
+        }
+      };
+    </script>
+  </body>
+</html>

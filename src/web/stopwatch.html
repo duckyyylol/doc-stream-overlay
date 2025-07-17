@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<head>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"
+    integrity="sha512-xi/RZRIF/S0hJ+yJJYuZ5yk6/8pCiRlEXZzoguSMl+vk2i3m6UjUO/WcZ11blRL/O+rnj94JRGwt/CHbc9+6EA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Markazi+Text:wght@400..700&display=swap');
+
+    body {
+      margin: 0;
+    }
+
+    * {
+      font-family: 'Markazi Text';
+    }
+    #demo {
+      font-size: 10em;
+      font-weight: bold;
+
+      background-clip: text;
+
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gray {
+      background: rgb(106, 106, 106);
+      background: linear-gradient(67deg, rgba(106, 106, 106, 1) 0%, rgba(166, 166, 166, 1) 100%);
+    }
+
+    .idle {
+      background: rgb(50, 154, 94);
+      background: linear-gradient(67deg, rgba(50, 154, 94, 1) 0%, rgba(24, 194, 49, 1) 100%);
+    }
+
+    .green {
+      background: rgb(172, 190, 211);
+      background: -moz-linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      background: -webkit-linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      background: linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#acbed3",endColorstr="#3d515c",GradientType=1);
+    }
+  </style>
+</head>
+<body>
+  <span id="demo" class="gray">00:00.00</span>
+
+  <script>
+    // Set the date we're counting down to
+    var stopwatch = {
+      time: -1,
+      running: false,
+    };
+
+    function createPacket(command, data) {
+      return JSON.stringify({ command, data, id: 0 });
+    }
+
+    const ws = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+    ws.onmessage = ev => {
+      const packet = JSON.parse(ev.data);
+
+      switch (packet.command) {
+        case 'hello':
+          ws.send(
+            createPacket('hello', {
+              intents: ['ROSTER'],
+            })
+          );
+          break;
+
+        case 'stopwatch':
+          if (!stopwatch.running && stopwatch.time == -1) {
+            document.getElementById('demo').classList.remove('gray');
+            document.getElementById('demo').classList.add('idle');
+            stopwatch.time = Date.now();
+            stopwatch.running = true;
+          } else if (stopwatch.running) {
+            stopwatch.running = false;
+            document.getElementById('demo').classList.remove('idle');
+            document.getElementById('demo').classList.add('green');
+          } else {
+            document.getElementById('demo').innerText = `00:00.000`;
+            stopwatch.time = -1;
+            document.getElementById('demo').classList.remove('green');
+            document.getElementById('demo').classList.add('gray');
+          }
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    // var sound = new Howl({
+    // 	src: ["/admin/ET_OneMinute.wav"],
+    // });
+
+    // var playingId = null;
+
+    function millisToMinutesAndSeconds(millis) {
+      var minutes = Math.floor(millis / 60000);
+      var seconds = Math.floor((millis % 60000) / 1000);
+      return String(minutes).padStart(2, '0') + ':' + (seconds < 10 ? '0' : '') + seconds;
+    }
+
+    // Update the count down every 1 second
+    setInterval(function () {
+      if (stopwatch.running) {
+        const millis = Date.now() - stopwatch.time;
+
+        document.getElementById('demo').innerText = millisToMinutesAndSeconds(millis) + `.${String(millis % 1000).padStart(3, '0')}`;
+      }
+    }, 0);
+
+    var interval;
+
+    function ohShit() {
+      interval = setInterval(() => {
+        fetch('../status')
+          .then(r => {
+            if (r.status == 200) window.location.reload();
+          })
+          .catch(() => {
+            /* */
+          });
+      }, 5000);
+    }
+
+    ws.onclose = () => {
+      if (!interval) ohShit();
+    };
+    ws.onerror = () => {
+      if (!interval) ohShit();
+    };
+  </script>
+</body>

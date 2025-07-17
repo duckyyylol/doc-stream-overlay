@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<head>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"
+    integrity="sha512-xi/RZRIF/S0hJ+yJJYuZ5yk6/8pCiRlEXZzoguSMl+vk2i3m6UjUO/WcZ11blRL/O+rnj94JRGwt/CHbc9+6EA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Denk+One&display=swap');
+
+    body {
+      text-align: center;
+      margin: 0;
+    }
+
+    * {
+      font-family: 'Denk One';
+    }
+    #demo {
+      font-size: 10em;
+      font-weight: bold;
+      background: rgb(255, 255, 255);
+      /* 
+      background: -moz-linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      background: -webkit-linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      background: linear-gradient(149deg, rgba(172, 190, 211, 1) 0%, rgba(139, 161, 186, 1) 50%, rgba(126, 156, 175, 1) 82%, rgba(61, 81, 92, 1) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#acbed3",endColorstr="#3d515c",GradientType=1); */
+      /* color: #fff; */
+
+      background-clip: text;
+
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #subtext {
+      line-height: 0;
+      font-size: 3em;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <span id="demo"></span>
+  <br />
+  <span id="subtext"></span>
+
+  <script>
+    // Set the date we're counting down to
+    var countDownDate = 0;
+
+    function createPacket(command, data) {
+      return JSON.stringify({ command, data, id: 0 });
+    }
+
+    const ws = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+    ws.onmessage = ev => {
+      const packet = JSON.parse(ev.data);
+
+      switch (packet.command) {
+        case 'hello':
+          ws.send(
+            createPacket('hello', {
+              intents: ['ROSTER'],
+            })
+          );
+          break;
+
+        case 'timer':
+          console.log('packet');
+          console.log(packet);
+          paused = packet.data == -1;
+          countDownDate = packet.data;
+          break;
+
+        case 'full':
+          paused = packet.data.timer == -1;
+          countDownDate = packet.data.timer;
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    let paused = false;
+    // var sound = new Howl({
+    // 	src: ["/admin/ET_OneMinute.wav"],
+    // });
+
+    // var playingId = null;
+
+    // Update the count down every 1 second
+    setInterval(function () {
+      if (paused) {
+        document.getElementById('demo').innerText = '||';
+        document.getElementById('demo').style.lineHeight = '1';
+
+        document.getElementById('subtext').innerHTML = '<br/><br/><br/>STREAM PAUSED';
+        document.getElementById('subtext').style.lineBreak = '10px';
+        return;
+      }
+
+      // Get today's date and time
+      var now = new Date().getTime();
+
+      // Find the distance between now and the count down date
+      var distance = countDownDate - now;
+
+      // Time calculations for days, hours, minutes and seconds
+      var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      // Display the result in the element with id="demo"
+      if (distance > 0) {
+        document.getElementById('demo').innerText = `${hours > 0 ? `${hours}:` : ''}${hours > 0 && minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      } else {
+        document.getElementById('demo').innerText = '0:00';
+      }
+
+      document.getElementById('demo').style.lineHeight = '1.3';
+      document.getElementById('subtext').innerText = '';
+
+      // if (distance <= 61_000 && distance > 0 && playingId == null) {
+      // 	playingId = sound.play();
+      // }
+    }, 0);
+
+    var interval;
+
+    function ohShit() {
+      interval = setInterval(() => {
+        fetch('../status')
+          .then(r => {
+            if (r.status == 200) window.location.reload();
+          })
+          .catch(() => {
+            /* */
+          });
+      }, 5000);
+    }
+
+    ws.onclose = () => {
+      if (!interval) ohShit();
+    };
+    ws.onerror = () => {
+      if (!interval) ohShit();
+    };
+  </script>
+</body>

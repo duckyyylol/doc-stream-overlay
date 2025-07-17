@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./material.min.css" />
+  <script src="./material.min.js"></script>
+
+  <link rel="stylesheet" href="./getmdl-select.min.css" />
+  <script defer src="./getmdl-select.min.js"></script>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+  <style>
+    .connecting {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .content {
+      margin: 25px;
+    }
+
+    .demo-list-control {
+      width: 300px;
+    }
+
+    .demo-list-radio {
+      display: inline;
+    }
+
+    .floatingbuttons {
+      z-index: 9999;
+      position: sticky;
+    }
+
+    #ControlPanel > .mdl-card {
+      height: fit-content;
+    }
+  </style>
+</head>
+<body>
+  <!-- Always shows a header, even in smaller screens. -->
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <!-- Title -->
+        <span class="mdl-layout-title">Doctordeathdefying Stream Panel</span>
+        <!-- Add spacer, to align navigation to the right -->
+        <div class="mdl-layout-spacer"></div>
+        <!-- Navigation. We hide it in small screens. -->
+        <nav class="mdl-navigation mdl-layout--large-screen-only">
+          <a class="mdl-navigation__link" href="/logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="mdl-layout__drawer">
+      <nav class="mdl-navigation">
+        <a class="mdl-navigation__link" href="/admin">Home</a>
+      </nav>
+    </div>
+    <main class="mdl-layout__content">
+      <div class="page-content">
+        <div id="connecting" class="connecting">
+          <!-- MDL Spinner Component -->
+          <div class="mdl-spinner mdl-js-spinner is-active"></div>
+          <br />
+          <b>Connecting to the websocket...</b>
+        </div>
+
+        <div id="demo-toast-example" class="mdl-js-snackbar mdl-snackbar">
+          <div class="mdl-snackbar__text"></div>
+          <button class="mdl-snackbar__action" type="button"></button>
+        </div>
+
+        <script>
+          let attackingTower;
+          let defendingTower;
+          let roster = {};
+
+          function getCookie(cname) {
+            let name = cname + '=';
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+              let c = ca[i];
+              while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+              }
+              if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+              }
+            }
+            return '';
+          }
+
+          let socket;
+          let stopwatch = {};
+
+          function createPacket(command, data) {
+            return JSON.stringify({ command, data, id: 0 });
+          }
+
+          if (document.readyState == 'complete') {
+            lifecycle();
+          } else {
+            document.onreadystatechange = () => {
+              if (document.readyState == 'complete') {
+                lifecycle();
+              }
+            };
+          }
+
+          function lifecycle() {
+            socket = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+            // socket = new WebSocket("ws://localhost:8083");
+
+            socket.onopen = () => {};
+
+            socket.onmessage = ev => {
+              const packet = JSON.parse(ev.data);
+
+              console.log(packet.command)
+
+              switch (packet.command) {
+                case 'hello':
+                  socket.send(
+                    createPacket('hello', {
+                      intents: ['ROSTER'],
+                      team: 'ATTACKERS',
+                      token: getCookie('token'),
+                    })
+                  );
+                  break;
+
+                case 'full':
+                  stopwatch = packet.data.stopwatch;
+
+                  document.getElementById('connecting').hidden = true;
+                  document.getElementById('page').hidden = false;
+
+
+                  document.getElementById('ControlPanel').hidden = false;
+
+                  const d = new Date();
+                  d.setHours(d.getHours() - 4);
+                  d.setMilliseconds(0);
+                  document.getElementById('Timer.Time').valueAsNumber = d.getTime();
+
+                  document.getElementById('Timer.SetTime').onclick = () => {
+                    const newTime = new Date(document.getElementById('Timer.Time').valueAsNumber);
+                    newTime.setHours(newTime.getHours() + 4);
+
+                    socket.send(createPacket('timer', newTime.getTime()));
+                  };
+                  document.getElementById('Timer.Pause').onclick = () => {
+                    socket.send(createPacket('timer', -1));
+                  };
+
+                  document.getElementById('Timer.Quick.1Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 1);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.3Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 3);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.2Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 2);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.5Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 5);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.10Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 10);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.15Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 15);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Timer.Quick.30Min').onclick = () => {
+                    const newTime = new Date();
+
+                    newTime.setMilliseconds(0);
+                    newTime.setHours(newTime.getHours() - 4);
+                    newTime.setMinutes(newTime.getMinutes() + 30);
+
+                    document.getElementById('Timer.Time').valueAsNumber = newTime.getTime();
+                    document.getElementById('Timer.SetTime').click();
+                  };
+                  document.getElementById('Stopwatch.StartStop').onclick = () => {
+                    if (stopwatch.running) {
+                      stopwatch.running = false;
+                    } else {
+                      stopwatch.running = true;
+                      const newTime = Date.now();
+                      stopwatch.time = newTime;
+                    }
+
+                    socket.send(createPacket('stopwatch', stopwatch));
+                  };
+                  document.getElementById('Stopwatch.Reset').onclick = () => {
+                    if (stopwatch.running) {
+                      stopwatch.running = false;
+                    } else {
+                      stopwatch.running = true;
+                      const newTime = Date.now();
+                      stopwatch.time = newTime;
+                    }
+
+                    socket.send(createPacket('stopwatch', stopwatch));
+                  };
+                  //										document.getElementById("Timer.Quick.60Min").onclick =
+                  //											() => {
+                  //												const newTime = new Date();
+                  //
+                  //												newTime.setMilliseconds(0);
+                  //												newTime.setHours(newTime.getHours() - 3);
+                  //
+                  //			document.getElementById("Timer.Time").valueAsNumber =
+                  //				newTime.getTime();
+                  //			document.getElementById("Timer.SetTime").click();
+                  //		};
+
+                  document.getElementById('sendEmbeds').checked = packet.data.autoEmbeds;
+
+                  document.getElementById('Embeds.Upcoming').onclick = () => {
+                    socket.send(createPacket('embed', 'upcoming'));
+                  };
+                  document.getElementById('Embeds.Winners').onclick = () => {
+                    socket.send(createPacket('embed', 'winners'));
+                  };
+                  document.getElementById('Embeds.SummonInstructions').onclick = () => {
+                    socket.send(createPacket('embed', 'summon'));
+                  };
+
+                  document.getElementById('sendEmbeds').onchange = () => {
+                    socket.send(createPacket('autoEmbeds', document.getElementById('sendEmbeds').checked));
+                  };
+
+                  document.getElementById('Summoning.Password').value = packet.data.summoning.password;
+                  document.getElementById('Summoning.Grace').value = packet.data.summoning.grace;
+                  document.getElementById('Summoning.Commit').onclick = () => {
+                    socket.send(
+                      createPacket('summoning', {
+                        password: document.getElementById('Summoning.Password').value,
+                        grace: document.getElementById('Summoning.Grace').value,
+                      })
+                    );
+                  };
+
+                  document.getElementById('currentFighters').innerText = `${roster[attackingTower.currentFighter].displayName} v. ${roster[defendingTower.currentFighter].displayName}`;
+
+                  document.getElementById('toggle-dead-attackers').checked = roster[attackingTower.currentFighter].isAlive;
+                  document.getElementById('toggle-dead-defenders').checked = roster[attackingTower.currentFighter].isAlive;
+
+                  document.querySelector('select').selectedIndex = packet.data.deathReason;
+
+                  if (document.getElementById('toggle-dead-attackers').checked) document.getElementById('toggle-dead-attackers').parentNode.classList.add('is-checked');
+                  if (document.getElementById('toggle-dead-defenders').checked) document.getElementById('toggle-dead-defenders').parentNode.classList.add('is-checked');
+
+                  document.getElementById('toggle-dead-attackers').onchange = () => {
+                    changeLifeStatus(attackingTower.currentFighter);
+                  };
+                  document.getElementById('toggle-dead-defenders').onchange = () => {
+                    changeLifeStatus(defendingTower.currentFighter);
+                  };
+
+                  onStringSetPacket(packet.data.stringSet);
+
+                  document.getElementById('DeathReasonSelect').onchange = () => {
+                    socket.send(createPacket('deathReason', document.getElementById('DeathReasonSelect').selectedIndex));
+                  };
+
+                  document.getElementById('Timer.StringSetSelect').onchange = () => {
+                    document.getElementById('Timer.StringSetSelect').disabled = true;
+
+                    const id = document.getElementById('Timer.StringSetSelect').selectedOptions.item(0).id;
+                    socket.send(createPacket('stringSet', id ? id : null));
+                  };
+
+                  break;
+
+                default:
+                  break;
+              }
+            };
+
+            var snackbarContainer = document.querySelector('#demo-toast-example');
+
+            socket.onclose = () => {
+              document.querySelectorAll('button').forEach(b => (b.disabled = true));
+              document.querySelectorAll('input').forEach(b => (b.disabled = true));
+              document.querySelectorAll('a').forEach(a => (a.href = '#'));
+
+              snackbarContainer.MaterialSnackbar.showSnackbar({
+                message: 'Connection lost, please reload the page',
+                timeout: 99999,
+              });
+            };
+          }
+        </script>
+
+        <div class="content" id="page">
+          <div id="ControlPanel" style="display: flex">
+            <div class="demo-card-square mdl-card mdl-shadow--2dp">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">Timer Control</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                  <input class="mdl-textfield__input" type="datetime-local" step="2" id="Timer.Time" />
+                  <label class="mdl-textfield__label" for="bgColor">Timer Time</label>
+                </div>
+                <div style="text-align: center">
+                  <button id="Timer.Quick.1Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">1 minute</button>
+                  <button id="Timer.Quick.2Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">2 minutes</button>
+                  <br />
+                  <br />
+                  <button id="Timer.Quick.3Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">3 minutes</button>
+                  <button id="Timer.Quick.5Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">5 minutes</button>
+                  <br />
+                  <br />
+                  <button id="Timer.Quick.10Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">10 minutes</button>
+                  <button id="Timer.Quick.15Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">15 minutes</button>
+                  <!-- <button id="Timer.Quick.30Min" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">30 minutes</button> -->
+                  <br />
+                  <br />
+                  <button id="Stopwatch.StartStop" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">Start/Stop</button>
+                  <button id="Stopwatch.Reset" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">Reset</button>
+                </div>
+                <br />
+              </div>
+              <div class="mdl-card__actions mdl-card--border">
+                <a id="Timer.SetTime" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"> Set </a><a id="Timer.Pause" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"> Pause </a>
+              </div>
+            </div>
+
+            
+          <div id="attkdeftabs" class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect" hidden>
+            <div class="mdl-tabs__tab-bar">
+              <a onclick="updateTowerInfoForm(true)" href="#config-panel" class="mdl-tabs__tab is-active">Attackers</a>
+              <a onclick="updateTowerInfoForm(false)" href="#config-panel" class="mdl-tabs__tab">Defenders</a>
+            </div>
+
+            <div class="mdl-tabs__panel is-active" id="config-panel">
+              <div id="RosterPanel" hidden>
+                <br />
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" style="width: 100%" onclick="resetAndOpenFighterModal()">Add Fighter</button>
+                <ul class="mdl-list"></ul>
+              </div>
+              <div id="teamInfo-panel" hidden>
+                <br />
+                <form>
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="text" id="towerName" />
+                    <label class="mdl-textfield__label" for="towerName">Tower Name</label>
+                  </div>
+                  <br />
+                  <br />
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="color" id="bgColor" />
+                    <label class="mdl-textfield__label" for="bgColor">Background Color</label>
+                  </div>
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="color" id="fighterColor" />
+                    <label class="mdl-textfield__label" for="bgColor">Fighter Color</label>
+                  </div>
+                  <br />
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="color" id="textColor" />
+                    <label class="mdl-textfield__label" for="textColor">Text Color</label>
+                  </div>
+                  <br />
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="text" id="towerEmoji" />
+                    <label class="mdl-textfield__label" for="towerEmoji">Tower Emoji</label>
+                  </div>
+                  <br />
+                  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                    <input class="mdl-textfield__input" type="text" id="towerIcon" />
+                    <label class="mdl-textfield__label" for="towerIcon">Tower Icon</label>
+                  </div>
+                </form>
+                <hr />
+                <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="towerinfo.save">Save</button>
+              </div>
+            </div>
+          </div>
+          <div id="MetaPanel" hidden>
+            <h3>War Info</h3>
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" type="text" id="WarInfo.Location" />
+              <label class="mdl-textfield__label" for="bgColor">War Location</label>
+            </div>
+            <br />
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" type="number" id="WarInfo.Count" />
+              <label class="mdl-textfield__label" for="bgColor">War Number</label>
+            </div>
+            <br />
+            <br />
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="WarInfo.Commit">Commit</button>
+            <br />
+            <br />
+            <h3>Set Casters (Credits)</h3>
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" type="text" pattern="[0-9]{8,}" required autocomplete="off" id="WarInfo.Caster1" />
+              <label class="mdl-textfield__label" for="WarInfo.Caster1">Caster #1 User ID</label>
+              <span class="mdl-textfield__error caster1-error">Invalid user ID</span>
+            </div>
+            <br />
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" pattern="[0-9]{8,}" required autocomplete="off" type="text" id="WarInfo.Caster2" />
+              <label class="mdl-textfield__label" for="WarInfo.Caster2">Caster #2 User ID</label>
+              <span class="mdl-textfield__error caster2-error">Invalid user ID</span>
+            </div>
+            <br />
+            <br />
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="WarInfo.CommitCasters">Set Casters</button>
+          </div>
+          <!-- meta panel end -->
+        </div>
+      </div>
+    </main>
+  </div>
+</body>

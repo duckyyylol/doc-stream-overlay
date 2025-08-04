@@ -25,7 +25,7 @@ export class DiscordOauth {
 				grant_type: "authorization_code",
 				code,
 				redirect_uri: `${hostname() != "tower-maiden"
-					? "http://localhost:8084"
+					? "http://localhost:8085"
 					: //   "https://would-offering-any-technology.trycloudflare.com"
 					"https://panel.doctordeathdefying.live"
 					}/auth`,

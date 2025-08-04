@@ -58,7 +58,7 @@
       return JSON.stringify({ command, data, id: 0 });
     }
 
-    const ws = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+    const ws = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8086' : 'wss://ws.doctordeathdefying.live/war');
     ws.onmessage = ev => {
       const packet = JSON.parse(ev.data);
 

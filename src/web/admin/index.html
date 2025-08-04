@@ -114,7 +114,7 @@
           }
 
           function lifecycle() {
-            socket = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8083' : 'wss://ws.doctordeathdefying.live/war');
+            socket = new WebSocket(window.location.hostname == 'localhost' ? 'ws://localhost:8086' : 'wss://ws.doctordeathdefying.live/war');
             // socket = new WebSocket("ws://localhost:8083");
 
             socket.onopen = () => {};

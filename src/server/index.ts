@@ -156,7 +156,7 @@ let twitchApi: TwitchAPI = new TwitchAPI(process.env.TWITCH_CLIENT_ID, process.e
 
 // 	// loadStringSet("none")
 
-// 	console.log(`Overlay is Running in ${hostname() != "tower-maiden" ? "DEV" : "PRODUCTION"}!`);
+// 	console.log(`Overlay is Running in ${hostname() != "duckyserver" ? "DEV" : "PRODUCTION"}!`);
 // 	isReady = true;
 // });
 
@@ -240,11 +240,11 @@ app.get("/admin/*", async (req, res) => {
 
 	if (!req.cookies.token)
 		return res.redirect(
-			`https://discord.com/api/oauth2/authorize?client_id=${hostname() != "tower-maiden"
+			`https://discord.com/api/oauth2/authorize?client_id=${hostname() != "duckyserver"
 				? process.env.APPLICATION_DEV_ID
 				: process.env.APPLICATION_ID
 			}&redirect_uri=${encodeURIComponent(
-				`${hostname() != "tower-maiden"
+				`${hostname() != "duckyserver"
 					? req.protocol + "://" + req.get("host")
 					: //   "https://" + req.get("host")
 					"https://panel.doctordeathdefying.live"

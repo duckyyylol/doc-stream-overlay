@@ -24,7 +24,7 @@ export class DiscordOauth {
 			{
 				grant_type: "authorization_code",
 				code,
-				redirect_uri: `${hostname() != "tower-maiden"
+				redirect_uri: `${hostname() != "duckyserver"
 					? "http://localhost:8085"
 					: //   "https://would-offering-any-technology.trycloudflare.com"
 					"https://panel.doctordeathdefying.live"
@@ -82,11 +82,11 @@ export class DiscordOauth {
 		if (authAsApplication)
 			options["auth"] = {
 				username:
-					hostname() != "tower-maiden"
+					hostname() != "duckyserver"
 						? process.env.APPLICATION_DEV_ID
 						: process.env.APPLICATION_ID,
 				password:
-					hostname() != "tower-maiden"
+					hostname() != "duckyserver"
 						? process.env.APPLICATION_DEV_SECRET
 						: process.env.APPLICATION_SECRET,
 			};
